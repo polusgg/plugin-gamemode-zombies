@@ -15,33 +15,58 @@ export class ZombieManager extends BaseManager {
     this.catch("game.ended", event => event.getGame()).execute(event => {
       if (([
         GameOverReason.CrewmateDisconnect,
+        GameOverReason.ImpostorDisconnect,
         GameOverReason.ImpostorsByKill,
         GameOverReason.ImpostorsBySabotage,
       ]).indexOf(event.getReason()) > -1) {
         event.cancel();
-
-        if (event.getReason() == GameOverReason.CrewmateDisconnect) {
-          for (let i = 0; i < event.getGame().getLobby().getConnections().length; i++) {
-            const connection = event.getGame().getLobby().getConnections()[i];
-
-            Services.get(ServiceType.RoleManager).setEndGameData(connection, {
-              title: "Zombie Win",
-              color: [0x18, 0x89, 0x35, 0xFF],
-              subtitle: "The last crewmate disconnected",
-              yourTeam: event.getGame().getLobby().getPlayers(),
-              displayQuit: true,
-              displayPlayAgain: true,
-            });
-          }
-        }
       }
     });
 
     this.catch("meeting.started", event => event.getGame()).execute(event => event.cancel());
+
+    lobby.getServer().on("player.left", event => {
+      if (event.getLobby() !== lobby) {
+        return;
+      }
+
+      if (this.checkEndGame()) {
+        this.owner.getConnections().forEach(connection => {
+          if (event.getPlayer().getRole() == PlayerRole.Crewmate) {
+            Services.get(ServiceType.RoleManager).setEndGameData(connection, {
+              title: "Zombie Win",
+              color: [0x18, 0x89, 0x35, 0xFF],
+              subtitle: "The last crewmate disconnected",
+              yourTeam: this.owner.getPlayers(),
+              displayQuit: true,
+              displayPlayAgain: true,
+            });
+          } else {
+            Services.get(ServiceType.RoleManager).setEndGameData(connection, {
+              title: "Crew Win",
+              color: [0x18, 0x89, 0x35, 0xFF],
+              subtitle: "The last zombie disconnected",
+              yourTeam: this.owner.getPlayers(),
+              displayQuit: true,
+              displayPlayAgain: true,
+            });
+          }
+        });
+
+        Services.get(ServiceType.RoleManager).endGame(this.owner.getGame()!);
+      }
+    })
   }
 
   getId(): string { return "zombies" }
   getTypeName(): string { return "Zombie" }
+
+  checkEndGame(): boolean {
+    return this.owner.getPlayers().every(p =>
+      p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie" ||
+      p.getGameDataEntry().isDisconnected()
+    ) || this.owner.getPlayers().filter(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie").length === 0
+  }
 }
 
 export class Zombie extends BaseRole {
@@ -64,19 +89,19 @@ export class Zombie extends BaseRole {
       setTimeout(() => {
         roleManager.assignRole(event.getPlayer(), Zombie);
 
-        if (player.getLobby().getPlayers().every(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie")) {
-          player.getLobby().getConnections().forEach(connection => {
+        if (this.checkEndGame()) {
+          this.owner.getLobby().getConnections().forEach(connection => {
             Services.get(ServiceType.RoleManager).setEndGameData(connection, {
               title: "Infectious",
               subtitle: "The Zombies managed to ravage the crew",
               color: [0x18, 0x89, 0x35, 0xFF],
-              yourTeam: event.getPlayer().getLobby().getPlayers(),
+              yourTeam: this.owner.getLobby().getPlayers(),
               displayPlayAgain: true,
               displayQuit: true,
             });
           });
 
-          Services.get(ServiceType.RoleManager).endGame(event.getPlayer().getLobby().getGame()!);
+          Services.get(ServiceType.RoleManager).endGame(this.owner.getLobby().getGame()!);
         }
       }, 1000);
     });
@@ -92,5 +117,12 @@ export class Zombie extends BaseRole {
 
   getManagerType(): typeof ZombieManager {
     return ZombieManager;
+  }
+
+  checkEndGame(): boolean {
+    return this.owner.getLobby().getPlayers().every(p =>
+      p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie" ||
+      p.getGameDataEntry().isDisconnected()
+    ) || this.owner.getLobby().getPlayers().filter(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie").length === 0
   }
 }
