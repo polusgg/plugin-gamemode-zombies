@@ -1,7 +1,7 @@
 {
   "name": "@polusgg/plugin-gamemode-zombies",
   "np-plugin": true,
-  "version": "1.0.0-2",
+  "version": "1.0.1-0",
   "description": "Polus.gg Zombies gamemode plugin for NodePolus",
   "repository": {
     "type": "git",
