@@ -55,17 +55,16 @@ export class ZombieManager extends BaseManager {
 
         Services.get(ServiceType.RoleManager).endGame(this.owner.getGame()!);
       }
-    })
+    });
   }
 
   getId(): string { return "zombies" }
   getTypeName(): string { return "Zombie" }
 
   checkEndGame(): boolean {
-    return this.owner.getPlayers().every(p =>
-      p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie" ||
-      p.getGameDataEntry().isDisconnected()
-    ) || this.owner.getPlayers().filter(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie").length === 0
+    return this.owner.getPlayers().every(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie" ||
+      p.getGameDataEntry().isDisconnected(),
+    ) || this.owner.getPlayers().filter(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie").length === 0;
   }
 }
 
@@ -120,9 +119,8 @@ export class Zombie extends BaseRole {
   }
 
   checkEndGame(): boolean {
-    return this.owner.getLobby().getPlayers().every(p =>
-      p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie" ||
-      p.getGameDataEntry().isDisconnected()
-    ) || this.owner.getLobby().getPlayers().filter(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie").length === 0
+    return this.owner.getLobby().getPlayers().every(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie" ||
+      p.getGameDataEntry().isDisconnected(),
+    ) || this.owner.getLobby().getPlayers().filter(p => p.getMeta<BaseRole>("pgg.api.role").getName() === "Zombie").length === 0;
   }
 }
