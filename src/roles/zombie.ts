@@ -79,9 +79,10 @@ export class Zombie extends BaseRole {
 
     const roleManager = Services.get(ServiceType.RoleManager);
 
+    // Always set base role before revival! Kill button will not show up if the player is a crewmate on revive
+    roleManager.setBaseRole(player as Player, PlayerRole.Impostor);
     player.revive();
     player.setColor(PlayerColor.Green);
-    roleManager.setBaseRole(player as Player, PlayerRole.Impostor);
     player.setTasks(new Set());
 
     this.catch("player.murdered", event => event.getKiller()).execute(event => {
@@ -91,7 +92,7 @@ export class Zombie extends BaseRole {
         if (this.checkEndGame()) {
           this.owner.getLobby().getConnections().forEach(connection => {
             Services.get(ServiceType.RoleManager).setEndGameData(connection, {
-              title: "Infectious",
+              title: "Infected",
               subtitle: "The Zombies managed to ravage the crew",
               color: [0x18, 0x89, 0x35, 0xFF],
               yourTeam: this.owner.getLobby().getPlayers(),
